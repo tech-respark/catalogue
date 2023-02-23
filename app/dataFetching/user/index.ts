@@ -2,7 +2,7 @@ import { APISERVICE } from "@api/RestClient";
 
 export const updateUser = (userDetails) => {
     return new Promise((res, rej) => {
-        APISERVICE.POST(`${process.env.NEXT_PUBLIC_REGISTER_USER}`, userDetails)
+        APISERVICE.POST(`${process.env.NEXT_PUBLIC_CUSTOMERS}`, userDetails)
             .then((response) => {
                 res(response);
             }).catch(function (error) {
@@ -26,7 +26,7 @@ export const updateUserAddress = (address, userId) => {
 
 export const getUserByTenantAndMobile = (tenantId, storeId, mobile) => {
     return new Promise((res, rej) => {
-        APISERVICE.GET(`${process.env.NEXT_PUBLIC_REGISTER_USER}/userbymobileno?tenantId=${tenantId}&storeId=${storeId}&mobileNo=${mobile}`)
+        APISERVICE.GET(`${process.env.NEXT_PUBLIC_CUSTOMERS}/userbymobileno?tenantId=${tenantId}&storeId=${storeId}&mobileNo=${mobile}`)
             .then((response) => {
                 res(response.data);
             }).catch(function (error) {
