@@ -372,7 +372,7 @@ function CheckoutPage() {
                     dispatch(showError('Order creation failed'))
                 })
             } else {//create razor pay order
-                APISERVICE.POST(process.env.NEXT_PUBLIC_PLACE_ORDER_RAZOR_PAY, order).then((res) => {
+                APISERVICE.POST(`${process.env.NEXT_PUBLIC_PLACE_ORDER}/rzr`, order).then((res) => {
                     setTimeout(() => {
                         const { Razorpay }: any = window;
                         const rzp1 = new Razorpay(res.data);
