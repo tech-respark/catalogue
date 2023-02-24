@@ -235,6 +235,7 @@ function HomePage({ storeData, activeGroup, storeMetaData }) {
               </>}
             </div>
           })}
+    //  From vercel //
           {storeData.categories &&
             <>
               {configData?.storeConfig?.basicConfig?.services && isAnyServiceAvailable && <div className="fullwidth">
@@ -265,7 +266,6 @@ function HomePage({ storeData, activeGroup, storeMetaData }) {
           }
         </div> : null}
       </div>
-    //  {process.env.NODE_ENV} //
       {(configData.storeConfig?.appointmentConfig?.active && currentPage != 'cart' && currentPage != 'checkout' && currentPage != 'appointment' && !cartAppointment.length) ?
         <div className="appointment-wrapper" onClick={redirectToCategories}>
           <div className="appointment-button"> Book Appointment </div>

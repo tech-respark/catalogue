@@ -18,3 +18,9 @@ images
 
 type : service/product/staff
 entityType : category/items/images
+
+deleted demo5 from godddy 3.108.173.78
+
+added ns1.vercel-dns.com & ns2.vercel-dns.com to the godaddy as NS records
+
+deleted other projects of vercel from devourin git and removed salon web projects from qa.respark@gmail.com
