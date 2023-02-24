@@ -365,9 +365,9 @@ function ServicePdpModal() {
                                     <div className="modal-close" onClick={() => closePdpMOdal()}>
                                         <SvgIcon icon="close" />
                                     </div >
-                                    {windowRef() && window?.location?.protocol == 'https:' && <div className="modal-close modal-share" onClick={() => onSharePage()}>
+                                    {/* {windowRef() && window?.location?.protocol == 'https:' && <div className="modal-close modal-share" onClick={() => onSharePage()}>
                                         <SvgIcon icon="share" />
-                                    </div>}
+                                    </div>} */}
                                     {/* {item?.iTag && <div className="ribbon "><span>{item?.iTag}</span></div>} */}
 
                                     <Paper elevation={4} className="outer"

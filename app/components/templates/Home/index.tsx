@@ -235,7 +235,6 @@ function HomePage({ storeData, activeGroup, storeMetaData }) {
               </>}
             </div>
           })}
-    //  From vercel //
           {storeData.categories &&
             <>
               {configData?.storeConfig?.basicConfig?.services && isAnyServiceAvailable && <div className="fullwidth">

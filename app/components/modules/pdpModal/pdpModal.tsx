@@ -570,10 +570,10 @@ function PdpModal() {
                                 <div className="cart-item-count">{cartItemQuantity}</div>
                                 <SvgIcon icon="cart" />
                             </div>}
-                            {windowRef() && window?.location?.protocol == 'https:'
+                            {/* {windowRef() && window?.location?.protocol == 'https:'
                                 && <div className="modal-close modal-share" onClick={() => onSharePage()}>
                                     <SvgIcon icon="share" />
-                                </div>}
+                                </div>} */}
                             {item?.videoLink && !(configData?.storeConfig?.sparkConfig?.showThumbnailsOnPDP) && <div className="modal-close vdo-icon" onClick={() => setShowVdoModal(true)}>
                                 <SvgIcon icon="camera" />
                             </div>}
