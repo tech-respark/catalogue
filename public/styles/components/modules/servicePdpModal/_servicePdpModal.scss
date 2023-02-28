@@ -292,7 +292,7 @@
     letter-spacing: 0.5px;
     color: var(--primary-color);
 
-    > span {
+    >span {
       margin-right: 5px;
     }
   }
@@ -454,6 +454,7 @@
         }
 
         &.variation-wrap {
+
           .service-price,
           .service-name {
             color: #303641 !important;
@@ -476,7 +477,7 @@
       .btn {
         width: auto;
         background-color: var(--primary-color);
-        // color: #fff;
+        color: var(--primary-text-color);
         border-radius: 5px;
         cursor: pointer;
         transition: all ease-out 0.3s;
