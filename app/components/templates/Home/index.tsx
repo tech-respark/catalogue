@@ -235,6 +235,7 @@ function HomePage({ storeData, activeGroup, storeMetaData }) {
               </>}
             </div>
           })}
+          PRODUCYIONDKNDK
           {storeData.categories &&
             <>
               {configData?.storeConfig?.basicConfig?.services && isAnyServiceAvailable && <div className="fullwidth">
