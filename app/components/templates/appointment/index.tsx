@@ -5,11 +5,9 @@ import { useSelector, useDispatch } from 'react-redux';
 import { SERVICE } from '@constant/types';
 import Item from '@element/horizontalItem';
 import { getStaffByTenantId } from '@storeData/staff';
-import ConfirmationModal from '@module/confirmationModal';
 import { useCookies } from "react-cookie";
 import { APISERVICE } from '@util/apiService/RestClient';
 import { disableLoader, enableLoader, updateStore, updateWhatsappTemplates } from '@context/actions';
-import router from 'next/router';
 import UserRegistrationModal from '@module/userRegistration';
 import { windowRef } from '@util/window';
 import { APPOINTMENT_CREATED, APPOINTMENT_TYPE } from '@constant/appointment';
@@ -31,6 +29,10 @@ function MdClear(props) {
     return <svg stroke="currentColor" fill="currentColor" strokeWidth={0} viewBox="0 0 24 24" height="1em" width="1em" {...props}><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" /></svg>;
 }
 
+function DeleteIcon(props) {
+    return <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24" data-testid="DeleteIcon" {...props}><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path></svg>
+}
+
 const DatePickerInput = forwardRef((props: any, ref: any) => <button className="date-picker-button" onClick={props.onClick} ref={ref}>
     {props.value ? <>
         {props.from == 'Birth date' ? 'Birth date: ' : 'Anniversary date: '} {props.value}
@@ -41,18 +43,18 @@ const DatePickerInput = forwardRef((props: any, ref: any) => <button className="
 </button>);
 
 function Appointment() {
+
+    const imageRef = useRef<HTMLInputElement>(null);
+
     const [cookie, setCookie] = useCookies();
     const [userData, setUserCookie] = useState(cookie['user']);
     const store = useSelector((state: any) => state);
     const dispatch = useDispatch();
     const [itemToSearch, setitemToSearch] = useState('');
     const [expertQuery, setExpertQuery] = useState('');
-    const [memberQuery, setmemberQuery] = useState('');
-    const baseRouteUrl = useSelector((state: any) => state.store.baseRouteUrl);
     const appointmentItems = useSelector((state: any) => state.appointmentServices);
     const storeData = useSelector((state: any) => state.store ? state.store.storeData : null);
     const [storeSlot, setStoreSlot] = useState(createSlots(storeData.configData?.startTime, storeData.configData?.closureTime));
-    const [filteredList, setfilteredList] = useState<any>();
     const [expertData, setexpertData] = useState(null);
     const [allExpertsList, setAllExpertsList] = useState<any>([])
     const [selectedExpert, setSelectedExpert] = useState<any>();
@@ -78,6 +80,10 @@ function Appointment() {
     const [categoriesList, setCategoriesList] = useState<any[]>([]);
     const storeMetaData = useSelector((state: any) => state.store ? state.store.storeMetaData : null);
     const whatsappTemplates = store.whatsappTemplates;
+    const [instImages, setInstImages] = useState<string[]>([]);
+    const [instrImgReset, setInstrImgReset] = useState<boolean>(false);
+    const [instrImgError, setInstrImgError] = useState<boolean>(false);
+    const [showInstrImageDelConfirmModal, setShowInstrImageDelConfirmModal] = useState<[boolean, number]>([false, 0]);
 
     useEffect(() => {
         if (windowRef) {
@@ -120,7 +126,7 @@ function Appointment() {
     useEffect(() => {
         if (allExpertsList.length != 0 && appointmentItems.length != 0) {
             let availableStaff = [];
-            appointmentItems.map((service: any, i: number) => {
+            appointmentItems.map((service: any) => {
                 if (service.experts) {
                     service.experts.map((expert: any) => {
                         let alreadyAdded = availableStaff.length != 0 ? availableStaff.filter((s) => s.id == expert.id) : [];
@@ -205,9 +211,6 @@ function Appointment() {
 
     useEffect(() => {
         if (storeSlot.length != 0) {
-            const month = (new Date().getMonth() + 1).toString().length == 1 ? `0${new Date().getMonth() + 1}` : new Date().getMonth() + 1;
-            const date = new Date().getDate().toString().length == 1 ? `0${new Date().getDate()}` : new Date().getDate();
-            const todaysDateObj = `${new Date().getFullYear()}-${month}-${date}`
             if (getDateObj(new Date()).dateObj == getDateObj(selectedDate).dateObj) {// check for todays date create slot after current time
                 let hrs = ((new Date().getHours().toString().length == 1) ? '0' + new Date().getHours() : new Date().getHours());
                 let mins = ((new Date().getMinutes().toString().length == 1) ? '0' + new Date().getMinutes() : new Date().getMinutes());
@@ -274,7 +277,7 @@ function Appointment() {
     }
 
     const createIndividualExpertService = (serviceDetails: any) => {
-        const { id, name, duration, durationType, categoryName, price, quantity, salePrice, categoryId, serviceId, txchrgs, variations } = serviceDetails;
+        const { id, name, duration, durationType, categoryName, price, quantity, salePrice, categoryId, txchrgs, variations } = serviceDetails;
         const individualAppointmentObj = {
             "appointmentDay": selectedDate,
             "appointmentTime": selectedSlot,
@@ -404,7 +407,32 @@ function Appointment() {
 
     }
 
-    const submitAppointment = (user) => {
+    const dataUrlToFile = (data: string, name: string) => {
+        let splitString = data.split(',');
+        let byteString = atob(splitString[1]);
+        let mimeString = splitString[0].split(":")[1].split(';')[0];
+
+        let ia = new Uint8Array(new ArrayBuffer(byteString.length));
+
+        for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+        }
+
+        return new File([ia], name, { type: mimeString });
+    }
+
+    const uploadImage = async (imagePath: string, index: number) => {
+        return new Promise<string>((res: Function) => {
+            let formData: any = new FormData();
+            formData.append("id", storeData.tenantId);
+            formData.append("file", dataUrlToFile(imagePath, `instruction_${index}.png`));
+            formData.append("type", "orders");
+            APISERVICE.POST(process.env.NEXT_PUBLIC_IMAGE_BASE + "/uploadwithtype", formData, { resoponseType: 'text' }).then((resp: any) => res(resp.data)).catch(() => res(null));
+
+        })
+    }
+
+    const submitAppointment = async (user) => {
         setShowAppointmentConfirmation(false);
         if (user) {
             dispatch(enableLoader());
@@ -417,11 +445,29 @@ function Appointment() {
             if (selectedMember) {
                 familyMember = selectedMember.mobileNo != userData.mobileNo ? selectedMember : null;
             }
+            let imageList = [];
+            let imageUploadFail = false;
+            for (let i = 0; i < instImages.length; i++) {
+
+                if (instImages[i].startsWith("data:image")) {
+                    let f: string = await uploadImage(instImages[i], i);
+                    if (f) imageList.push(f);
+                    else {
+                        imageUploadFail = true;
+                        break
+                    }
+                }
+                if (imageUploadFail) {
+                    console.log("Error uploading images")
+                    return;
+                }
+            }
             const appointmentObj = {
                 "appointmentDay": appointmentsList[0].appointmentDay,
                 "appointmentTime": appointmentsList[0].appointmentTime,
                 "duration": appointmentsList[0].duration,
                 "instruction": appointmentInstruction,
+                "instrImages": imageList,
                 "slot": appointmentsList[0].slot,
                 "expertId": appointmentsList[0].expertId,
                 "expertName": appointmentsList[0].expertName,
@@ -535,7 +581,7 @@ function Appointment() {
                         sameSite: true,
                     })
                     setSelectedMember({ ...familyMember })
-                }).catch((error) => {
+                }).catch(() => {
                     dispatch(disableLoader());
                     dispatch(showError('Something went wrong. please try again ', 2000));
                 })
@@ -547,7 +593,7 @@ function Appointment() {
 
 
     const filterCategory = async (category: any, searchQuery: any) => {
-        return new Promise((res, rej) => {
+        return new Promise((res) => {
             if (category.showOnUi) {
                 category.display = false;
                 if (category.name.toLowerCase().includes(searchQuery)) {
@@ -612,7 +658,7 @@ function Appointment() {
     const renderItems = (itemsList: any) => {
         if (itemsList && itemsList?.length != 0) {
             return <React.Fragment>
-                {itemsList?.map((item: any, itemIndex: number) => {
+                {itemsList?.map((item: any) => {
                     return <React.Fragment key={Math.random()}>
                         <Item item={item} config={{ redirection: false, onClickAction: true }} />
                     </React.Fragment>
@@ -627,18 +673,61 @@ function Appointment() {
         navigateTo(`${itemUrl}-srp`);
     }
 
+    const openInstrFileInput = () => { imageRef.current.click(); }
+
+    const resetInstrFileInput = () => { setInstrImgReset(!instrImgReset); }
+
+    const addInstrImage = (el: HTMLInputElement) => {
+        if (!el.files.length) return;
+
+        let file = el.files[0];
+
+        console.log(file.size);
+        if (file.size > 2097152) {
+            setInstrImgError(true);
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            if (typeof reader.result == 'string') {
+                let flag = true;
+                for (let i = 0; i < instImages.length; i++) {
+                    if (reader.result === instImages[i]) {
+                        flag = false;
+                        break;
+                    }
+                }
+
+                if (flag) setInstImages([...instImages, reader.result]);
+            }
+        }
+        reader.readAsDataURL(file);
+        setInstrImgError(false);
+
+        resetInstrFileInput();
+    }
+
+    const deleteImage = (index: number) => {
+        let imageList = [...instImages];
+        imageList.splice(index, 1);
+        setInstImages(imageList);
+    }
+    const openInstrImageDeleteConfirmModal = (index: number) => { setShowInstrImageDelConfirmModal([true, index]); }
+    const closeInstrImageDeleteConfirmModal = () => { setShowInstrImageDelConfirmModal([false, 0]); }
+
     return (
 
         <>
             {!showAppointmentSuccess ?
                 <div className="main-wrapper appointment-wrap">
                     {/* <div className="backwrap">
-                        <div className=" backwrap-content">
-                            <span onClick={() =>  navigateTo('home')}><SvgIcon icon="backArrow" shape='circle' height={30} width={30} /></span>
-                            <span>Appointment</span>
-                        </div>
+                    <div className=" backwrap-content">
+                        <span onClick={() =>  navigateTo('home')}><SvgIcon icon="backArrow" shape='circle' height={30} width={30} /></span>
+                        <span>Appointment</span>
+                    </div>
 
-                    </div> */}
+                </div> */}
                     {userData && <div className="card">
                         <div className="sub-heading">User Details</div>
                         <div className="username">{userData.firstName} {userData.lastName}
@@ -650,45 +739,45 @@ function Appointment() {
                     <div className="selected-service-list-wrap card clearfix">
                         <div className="sub-heading">Selected Services</div>
                         {/* <div className="input-wrap input-wrp">
-                            <input className="inputbox"
-                                value={itemToSearch || ''}
-                                onChange={(e) => searchItems(e.target.value)}
-                                placeholder="Search service"
-                                onClick={onClickServiceInput}
-                            />
-                            {!itemToSearch && <div className="input-icon"><IoMdSearch /></div>}
-                            {itemToSearch && <div className="input-icon" onClick={() => searchItems('')} ><MdClear /></div>}
-                            <Backdrop
-                                className="backdrop-modal-wrapper"
-                                open={activeInput == keywords[SERVICE] ? true : false}
+                        <input className="inputbox"
+                            value={itemToSearch || ''}
+                            onChange={(e) => searchItems(e.target.value)}
+                            placeholder="Search service"
+                            onClick={onClickServiceInput}
+                        />
+                        {!itemToSearch && <div className="input-icon"><IoMdSearch /></div>}
+                        {itemToSearch && <div className="input-icon" onClick={() => searchItems('')} ><MdClear /></div>}
+                        <Backdrop
+                            className="backdrop-modal-wrapper"
+                            open={activeInput == keywords[SERVICE] ? true : false}
+                        >
+                            <div className="backdrop-modal-content"
+                                style={{ height: `${activeInput == keywords[SERVICE] ? 'calc(100vh - 60px)' : '0'}` }}
                             >
-                                <div className="backdrop-modal-content"
-                                    style={{ height: `${activeInput == keywords[SERVICE] ? 'calc(100vh - 60px)' : '0'}` }}
-                                >
-                                    <div className="heading" >Add services</div>
-                                    <div className="modal-close" onClick={onClickServiceInput}>
-                                        <SvgIcon icon="close" />
-                                    </div>
-                                    <div className='service-search-input-wrap'>
-                                        <input className="inputbox"
-                                            value={itemToSearch || ''}
-                                            ref={itemSearchRef}
-                                            id="search-service"
-                                            onChange={(e) => searchItems(e.target.value)}
-                                            placeholder="Search service"
-                                        />
-                                        {!itemToSearch && <div className="input-icon"><IoMdSearch /></div>}
-                                        {itemToSearch && <div className="input-icon" onClick={() => searchItems('')} ><MdClear /></div>}
-                                    </div>
-                                    {categoriesList.length != 0 && <div className="add-services-wrap">
-                                        {categoriesList.map((category: any, i: number) => {
-                                            return <React.Fragment key={Math.random()}>{renderCategoryItemsView(category)}</React.Fragment>
-                                        })}
-                                    </div>}
-                                    {(categoriesList.length == 0 && itemToSearch) && <div className="not-found">Service not found</div>}
+                                <div className="heading" >Add services</div>
+                                <div className="modal-close" onClick={onClickServiceInput}>
+                                    <SvgIcon icon="close" />
                                 </div>
-                            </Backdrop>
-                        </div> */}
+                                <div className='service-search-input-wrap'>
+                                    <input className="inputbox"
+                                        value={itemToSearch || ''}
+                                        ref={itemSearchRef}
+                                        id="search-service"
+                                        onChange={(e) => searchItems(e.target.value)}
+                                        placeholder="Search service"
+                                    />
+                                    {!itemToSearch && <div className="input-icon"><IoMdSearch /></div>}
+                                    {itemToSearch && <div className="input-icon" onClick={() => searchItems('')} ><MdClear /></div>}
+                                </div>
+                                {categoriesList.length != 0 && <div className="add-services-wrap">
+                                    {categoriesList.map((category: any) => {
+                                        return <React.Fragment key={Math.random()}>{renderCategoryItemsView(category)}</React.Fragment>
+                                    })}
+                                </div>}
+                                {(categoriesList.length == 0 && itemToSearch) && <div className="not-found">Service not found</div>}
+                            </div>
+                        </Backdrop>
+                    </div> */}
                         {appointmentItems?.length != 0 && appointmentItems?.map((item, index) => {
                             return <div key={Math.random()} className="service-wrap">
                                 <div className='service-details'>
@@ -733,7 +822,7 @@ function Appointment() {
                             style={{ height: activeInput == 'expert' ? `${expertData ? (expertData.length + 1) * 30 : 0}px` : '0' }} onClick={() => expertQuery ? {} : ''} >
 
                             <div className="items-list">
-                                {expertData?.map((expert, i) => {
+                                {expertData?.map((expert) => {
                                     return <React.Fragment key={Math.random()}>
                                         {!!expert.active && <div className="expert-details" onClick={() => onSelectExpert(expert)}>
                                             <div className="expert-name">{expert.firstName} {expert.lastName}</div>
@@ -770,7 +859,7 @@ function Appointment() {
                             style={{ height: activeInput == 'store-location' ? `${configData?.storeConfig?.storeLocations ? (configData?.storeConfig?.storeLocations.length + 1) * 30 : 0}px` : '0' }}>
 
                             <div className="items-list">
-                                {configData?.storeConfig?.storeLocations?.map((store, i) => {
+                                {configData?.storeConfig?.storeLocations?.map((store) => {
                                     return <React.Fragment key={Math.random()}>
                                         <div className="expert-details" onClick={() => { setSelectedStoreLocation(store.name); setActiveInput('') }}>
                                             <div className="expert-name">{store.name}</div>
@@ -801,16 +890,16 @@ function Appointment() {
                             />
                         </div>
                         {/* {availableDates.map((date, index) => {
-                            return <div key={Math.random()} className={selectedDate?.dateObj == date.dateObj ? 'slot-wrap active' : "slot-wrap"} onClick={() => onSelectDate(date)}>
-                                <div>{date.displayDate}</div>
-                                <div>{date.displayDay}</div>
-                            </div>
-                        })} */}
+                        return <div key={Math.random()} className={selectedDate?.dateObj == date.dateObj ? 'slot-wrap active' : "slot-wrap"} onClick={() => onSelectDate(date)}>
+                            <div>{date.displayDate}</div>
+                            <div>{date.displayDay}</div>
+                        </div>
+                    })} */}
                     </div>
 
                     <div className="slot-time-outer card">
                         <div className="sub-heading">Preferred Time</div>
-                        {configData && storeSlot.map((storeSlot, index) => {
+                        {configData && storeSlot.map((storeSlot) => {
                             return <div key={Math.random()} onClick={() => onSelectSlot(storeSlot)} className={selectedSlot == storeSlot ? 'slot-wrap active' : "slot-wrap"}>{storeSlot}</div>
 
                         })}
@@ -818,7 +907,21 @@ function Appointment() {
 
                     <div className="input-wrap card">
                         <div className="sub-heading">Instruction</div>
-                        <textarea className="inputbox" placeholder="Note" value={appointmentInstruction || ''} onChange={(e) => setAppointmentInstruction(e.target.value)} />
+                        <textarea className={"inputbox instr" + (!appointmentInstruction ? " instrShare" : "")} placeholder="Note" value={appointmentInstruction || ''} onChange={(e) => setAppointmentInstruction(e.target.value)} />
+                        {instImages.length ? <div className="instrImgScrollContainer">
+                            <div className="instrImgScroll">
+                                {instImages.map((link: string, index: number) => <div key={link} className="instrImgContainer card">
+                                    <div className="instrImageDelIcon" onClick={() => openInstrImageDeleteConfirmModal(index)} >
+                                        <SvgIcon icon="close" />
+                                    </div>
+                                    <img className="instrImg" src={link} onClick={() => openInstrImageDeleteConfirmModal(index)} /></div>)}
+                            </div>
+                        </div> : null}
+                        <div className="instrFileInputButton">
+                            <button className="primary-btn border-btn" onClick={openInstrFileInput}>Add Image</button>
+                            <div className={instrImgError ? " add-img-note error" : "add-img-note"}>(Max 2MB per image)</div>
+                            <input key={instrImgReset ? "y" : "n"} type="file" ref={imageRef} onChange={(e) => addInstrImage(e.target)} className="hide" accept="image/jfif,image/png,image/jpeg,image/webp" />
+                        </div>
                     </div>
 
                     {!(!appointmentObj.total) && <div className="book-wrap">
@@ -831,7 +934,24 @@ function Appointment() {
                     </div>}
 
                     <Backdrop
-                        className="backdrop-modal-wrapper  appointment-checkout-wrapper"
+                        className="backdrop-modal-wrapper instrImageDelConfirmModal"
+                        open={showInstrImageDelConfirmModal[0]}
+                        title="Are you sure you want to delete this?"
+                    >
+                        <div className='backdrop-modal-content' style={{ height: showInstrImageDelConfirmModal[0] ? 445 : 0 }}>
+                            <div className="heading">Are you sure you want to delete this?</div>
+                            <div className="imageHeightLimiter">
+                                <img src={showInstrImageDelConfirmModal[0] ? instImages[showInstrImageDelConfirmModal[1]] : ""} />
+                            </div>
+                            <div className="buttonContainer">
+                                <button onClick={closeInstrImageDeleteConfirmModal} className='primary-btn border-btn'>No</button>
+                                <button onClick={() => { deleteImage(showInstrImageDelConfirmModal[1]); closeInstrImageDeleteConfirmModal(); }} className='primary-btn'>Yes</button>
+                            </div>
+                        </div>
+                    </Backdrop>
+
+                    <Backdrop
+                        className="backdrop-modal-wrapper appointment-checkout-wrapper"
                         open={showAppointmentConfirmation ? true : false}
                         title={'Appointment confirmation'}
 
@@ -849,7 +969,7 @@ function Appointment() {
                                 </div>
                                 <div className="services-list-wrap card">
                                     <div className="sub-heading">Services</div>
-                                    {appointmentItems?.map((item, i) => {
+                                    {appointmentItems?.map((item) => {
                                         return <div className="service-name" key={Math.random()}>{item.name}</div>
                                     })}
                                 </div>
@@ -865,7 +985,7 @@ function Appointment() {
                                     </div>
                                     <div className='profile-list'>
                                         <div className={`profile ${selectedMember?.name == userData?.firstName ? 'active' : ''}`} onClick={() => onSelectMember({ name: userData?.firstName, mobileNo: userData?.mobileNo })}  >Self</div>
-                                        {userData?.familyMembers?.map((member, i) => {
+                                        {userData?.familyMembers?.map((member) => {
                                             return <div key={Math.random()} onClick={() => onSelectMember(member)} className={`profile ${selectedMember?.name == member.name ? 'active' : ''}`}>{member.name}</div>
                                         })}
                                     </div>
@@ -946,14 +1066,14 @@ function Appointment() {
                             <div className='pricing-details-wrap d-f-c'>
                                 <div className='heading'>
                                     <div className='title'>SubTotal</div>
-                                    {appointmentObj.txchrgs?.map((taxData: any, i: number) => {
+                                    {appointmentObj.txchrgs?.map((taxData: any) => {
                                         return <div className='title' key={Math.random()}>{taxData.name}{taxData.isInclusive ? "(Inclusive)" : ''}({taxData.value}%)</div>
                                     })}
                                     <div className='title grand-total'>Grand Total</div>
                                 </div>
                                 <div className='details'>
                                     <div className='value'>{configData.currencySymbol} {appointmentObj.subTotal}</div>
-                                    {appointmentObj.txchrgs?.map((taxData: any, i: number) => {
+                                    {appointmentObj.txchrgs?.map((taxData: any) => {
                                         return <div className='value' key={Math.random()}>{configData.currencySymbol} {taxData.total}</div>
                                     })}
                                     <div className='value grand-total'>{configData.currencySymbol} {appointmentObj.total}</div>
@@ -972,7 +1092,7 @@ function Appointment() {
                             </div>
                             {appointmentOrder.expertAppointments.length != 0 && <div className="services-list-wrap card">
                                 <div className="sub-heading">Services</div>
-                                {appointmentOrder.expertAppointments?.map((item, i) => {
+                                {appointmentOrder.expertAppointments?.map((item) => {
                                     return <div className="service-name" key={Math.random()}>{item.service}</div>
                                 })}
                             </div>}
@@ -1001,4 +1121,3 @@ function Appointment() {
 }
 
 export default Appointment
-

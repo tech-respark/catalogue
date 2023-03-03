@@ -1,6 +1,7 @@
 .main-wrapper {
   &.appointment-wrap {
     padding: 15px;
+    padding-bottom: 55px;
     background: #ffffffa6;
     width: 100%;
     max-width: 480px;
@@ -12,10 +13,12 @@
     .searched-item-list-wrap {
       overflow: hidden;
     }
+
     .date-picker-wrap {
       .react-datepicker__month-container {
         width: 100%;
       }
+
       .react-datepicker__day,
       .react-datepicker__month-text,
       .react-datepicker__quarter-text,
@@ -27,6 +30,7 @@
         font-size: 14px;
         margin: 4px;
       }
+
       .react-datepicker__day-name,
       .react-datepicker__day,
       .react-datepicker__time-name {
@@ -37,6 +41,7 @@
         text-align: center;
         margin: 5px;
       }
+
       .react-datepicker__day--selected:hover,
       .react-datepicker__day--in-selecting-range:hover,
       .react-datepicker__day--in-range:hover,
@@ -56,6 +61,7 @@
         background-color: var(--primary-color) !important;
         color: #fff !important;
       }
+
       .react-datepicker__day--disabled {
         opacity: 0.2;
       }
@@ -113,7 +119,76 @@
       padding: 10px;
       outline: none;
       font-size: 13px;
+      resize: none;
+
       // border: 1px solid var(--primary-color);
+      &.instr {
+        height: 80px;
+
+        &.instrShare {
+          width: 100%;
+        }
+      }
+    }
+
+    .instrFileInputButton {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      width: 100%;
+      gap: 10px;
+      margin: 6px 0;
+
+      .primary-btn {
+        padding: 10px;
+        font-size: 11px;
+      }
+
+      .add-img-note {
+        font-size: 12px;
+
+        &.error {
+          color: #f14a4a;
+        }
+      }
+    }
+
+    .instrImgScrollContainer {
+      width: 100%;
+      display: inline-block;
+      position: relative;
+      height: 80px;
+
+      .instrImgScroll {
+        width: 100%;
+        height: 100%;
+        overflow-x: scroll;
+        overflow-y: hidden;
+        display: flex;
+
+        .instrImgContainer {
+          display: flex;
+          margin-right: 10px;
+          word-break: keep-all;
+          height: 100%;
+          position: relative;
+
+          .instrImageDelIcon {
+            position: absolute;
+            top: 1px;
+            right: -1px;
+            height: 20px;
+            fill: white;
+            stroke: black;
+            stroke-width: 1px;
+          }
+
+          .instrImg {
+            height: 100%;
+            border-radius: 5px;
+          }
+        }
+      }
     }
 
     .input-icon {
@@ -175,6 +250,7 @@
           }
 
           &:active {
+
             .service-price,
             .service-name {
               color: var(--primary-color);
@@ -366,6 +442,36 @@
         }
       }
     }
+
+    &.instrImageDelConfirmModal {
+      .backdrop-modal-content {
+        div {
+          display: flex;
+        }
+
+        .imageHeightLimiter {
+          height: 300px;
+          justify-content: center;
+          margin-bottom: 20px;
+
+          img {
+            border: black solid 1px;
+            border-radius: 7px;
+            height: 100%;
+            width: 100%;
+            object-fit: contain;
+          }
+        }
+
+        .buttonContainer {
+          justify-content: flex-end;
+
+          button.primary-btn:first-of-type {
+            margin-right: 20px;
+          }
+        }
+      }
+    }
   }
 
   .appointment-checkout-wrapper {
@@ -553,6 +659,7 @@
   }
 
   .slot-time-outer {
+
     // overflow: auto;
     // white-space: nowrap;
     .sub-heading {
