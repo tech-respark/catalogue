@@ -34,7 +34,7 @@ function AlertNotification() {
         <>
             {displayAlert && alert.message ? <div className="alert-wrap">
                 <Snackbar open={displayAlert}
-                    className={alert.type}
+                    className={`${alert.type} alert-msg-wrap`}
                     autoHideDuration={alert.duration}
                     TransitionComponent={TransitionRightToLeft}
                     // message={alert.message}

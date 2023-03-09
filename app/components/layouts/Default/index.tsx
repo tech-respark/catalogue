@@ -50,7 +50,7 @@ const Default = ({ children, enableDefaultLayout, currentPage }: Props) => {
 
   return (
     <div className="default clearfix" id="default-wrapper">
-      {/* <SliderDialog /> */}
+      <SliderDialog />
       <ServicePdpModal />
       <PdpModal />
       {state.isItemSearchActive && <SearchPage />}
