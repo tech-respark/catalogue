@@ -168,6 +168,7 @@ function OrderDetailModel({ handleClose, orderData }) {
                         <div className='subheading'>Bill to:</div>
                         <div className='name'>{orderData?.guest}</div>
                         <div className='phone'>{orderData?.phone} {orderData?.email && <>{orderData?.email}</>}</div>
+                        <div className='name'>GSTN: {orderData?.guestGSTN}</div>
                     </div>
                     <div className='date-wrap'>
                         {/* <div className='date'><span>Created On: </span>{orderData?.createdOn?.substring(0, 10)} {`${new Date(orderData?.createdOn).getHours()}:${new Date(orderData?.createdOn).getMinutes()}`}</div>
